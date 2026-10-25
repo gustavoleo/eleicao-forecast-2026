@@ -6,7 +6,7 @@ import os
 import numpy as np
 import pandas as pd
 
-MODEL_VERSION = 'geo-dirichlet-remaining-v1'
+MODEL_VERSION = 'geo-dirichlet-remaining-v2'
 
 def certainty_gate(frame, stats, fresh=True):
     result = dict(status='undecided', candidate_id=None, goal_satisfied=False,
@@ -92,15 +92,30 @@ def project(national, stats, regions, historical=None, draws=5000, seed=42):
             confident.append((partial / partial.sum() - prior, partial.sum()))
     swing = np.average([x[0] for x in confident], axis=0, weights=[x[1] for x in confident]) if confident else np.zeros(len(ids))
     remaining_by_candidate = np.zeros(len(ids))
+    regional_pending = 0
     for uf, (votes, s) in regions.items():
         partial = votes.set_index('candidate_id').votes.reindex(ids, fill_value=0).to_numpy(dtype=float)
         share = partial / partial.sum() if s['apurado_pct'] > 5 and partial.sum() else normalize(priors[uf] + swing)
         # Electorate coverage, not section percentage, estimates remaining vote volume.
         rate = partial.sum() / s['counted_electorate'] if s['counted_electorate'] > 0 and s['apurado_pct'] > 5 else .75
         pending = max(0, s['electorate'] - s['counted_electorate']) + s.get('uncounted_electors', 0)
+        regional_pending += pending
         remaining_by_candidate += share * pending * min(1., max(0., rate))
+    national_pending = max(0, stats['electorate'] - stats['counted_electorate']) + stats.get('uncounted_electors', 0)
+    # National counted votes are fixed. UF files arrive asynchronously, so their
+    # pending electorate must never add a second copy of nationally counted votes.
+    covered_electorate = sum(s['electorate'] for _, s in regions.values())
+    if covered_electorate > stats['electorate']:
+        raise ValueError('Regional electorate exceeds national total; overlapping or incompatible inputs')
+    uncovered_pending = max(0, national_pending - regional_pending)
+    if uncovered_pending:
+        remaining_by_candidate += baseline * uncovered_pending * .75
+        flags.append('Eleitorado restante sem cobertura sincronizada: prior nacional e taxa válida de 75%')
+    reconciliation_factor = min(1., national_pending / regional_pending) if regional_pending else 1.
+    if reconciliation_factor < 1:
+        remaining_by_candidate *= reconciliation_factor
+        flags.append('UFs defasadas: volume restante reduzido ao limite nacional para evitar dupla contagem')
     if not regions:
-        remaining_by_candidate = baseline * max(0, stats['electorate'] - stats['counted_electorate']) * .75
         flags.append('Sem UFs: modelo nacional provisório; não é extrapolação geográfica completa')
     if stats['sections_counted'] == stats['sections_total'] and not stats.get('uncounted_electors', 0):
         remaining_by_candidate[:] = 0
@@ -145,4 +160,7 @@ def project(national, stats, regions, historical=None, draws=5000, seed=42):
                 draws=draws, seed=seed, alpha_scale=scale, model_version=MODEL_VERSION,
                 historical_mapping=mapping, assumptions=sorted(set(flags)),
                 remaining_valid_estimate=float(remaining_total), geographic_units=len(regions),
+                national_pending_electorate=int(national_pending),
+                uncovered_pending_electorate=int(uncovered_pending),
+                regional_reconciliation_factor=float(reconciliation_factor),
                 calibration='Heurística não calibrada empiricamente. IC de 90% condicionado ao modelo; não inclui todos os erros sistemáticos.')

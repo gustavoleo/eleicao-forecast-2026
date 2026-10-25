@@ -19,6 +19,7 @@
 | Mobile / dark mode | Public page inspected in dark mode; mobile DOM at 390 px had scrollWidth=390 (no horizontal overflow) |
 | Streamlit Cloud primary | Sign-in/terms gate encountered. Working Cloudflare/Podman fallback deployed; Render manifest and alternative instructions supplied |
 | Mathematical or official elected candidate | **NOT ACHIEVED**. National TSE source stale; independent gate remains undecided. No candidate announced elected |
-| Municipal/section refinement | **Not implemented**; current model is UF-level. Conditional finer-resolution requirement remains outstanding |
+| Municipal/section refinement | **Not implemented**; current model is UF-level. Live EA12, municipal EA20 and Acre EA16 probes succeeded (`municipal-availability.json`); conditional finer-resolution requirement remains outstanding |
+| Geographic reconciliation / future timestamps | Model v2 deployed; 33 core tests pass (`pytest-v4.txt`), including missing UFs, lagging UF totals, overlapping electorate, future timestamps, failed model recovery. Six unchanged HTTP integration tests skipped in this run; prior separate evidence remains valid |
 
 The independent collector continues every minute (Brazil every 15 seconds). A thread heartbeat named `Election dashboard health and result` checks service/result state every five minutes. Local machine availability remains a dependency. The active goal has not been marked complete.

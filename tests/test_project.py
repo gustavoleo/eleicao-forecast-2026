@@ -103,3 +103,27 @@ def test_geography_uses_large_uncounted_region_history(monkeypatch):
 
 def test_alpha_schedule():
     assert [concentration(p) for p in [0,29,30,80,81,100]]==[20,20,100,100,500,500]
+
+def test_missing_region_does_not_discard_its_remaining_electorate():
+    f,s=case((60,40),900)
+    small,ss=case((60,40),0)
+    ss.update(apurado_pct=100)
+    out=project(f,s,{'ac':(small,ss)})
+    assert out['uncovered_pending_electorate']==900
+    assert out['remaining_valid_estimate']==pytest.approx(675)
+    assert out['candidates'][0]['ci_high']-out['candidates'][0]['ci_low']>.05
+
+def test_lagging_regions_cannot_resimulate_nationally_counted_votes():
+    f,s=case((600,400),100)
+    old,os=case((60,40),1000)
+    out=project(f,s,{'sp':(old,os)})
+    assert out['regional_reconciliation_factor']==pytest.approx(.1)
+    assert out['remaining_valid_estimate'] <= 100
+    assert out['uncovered_pending_electorate']==0
+    # Even assigning every uncounted vote against the leader cannot erase these votes.
+    assert out['candidates'][0]['ci_low'] >= 600/1100
+
+def test_overlapping_regions_rejected():
+    f,s=case((60,40),100)
+    with pytest.raises(ValueError,match='Regional electorate'):
+        project(f,s,{'ac':(f,s),'sp':(f,s)})

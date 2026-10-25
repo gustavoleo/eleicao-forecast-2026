@@ -89,6 +89,8 @@ if gate.get('inequality'):
     st.caption('Teste conservador para vitória: ' + gate['inequality'] + ' — ' + ('satisfeito' if gate.get('goal_satisfied') else 'ainda não satisfeito'))
 st.progress(min(1., stats.get('apurado_pct', 0)/100), text=f'{stats.get("apurado_pct", 0):.3f}% das seções totalizadas')
 projection = state.get('projection')
+if state.get('errors', {}).get('projection'):
+    st.warning('Não foi possível atualizar o modelo: dados incompatíveis. Qualquer projeção exibida conserva seu horário original.')
 if projection:
     candidates = projection['candidates']
     c1, c2, c3 = st.columns(3)
@@ -101,6 +103,8 @@ if projection:
     st.caption(f'5.000 simulações · atualização do modelo: {brtime(projection["ts"])} · {projection["geographic_units"]}/28 UFs e exterior · α={projection["alpha_scale"]:g}')
     if not projection.get('geographic_complete'):
         st.warning('Cobertura geográfica incompleta: projeção provisória.')
+    if projection.get('excluded_regions'):
+        st.caption('UFs excluídas por defasagem ou erro: ' + ', '.join(k.upper() for k in projection['excluded_regions']))
     st.caption(projection['calibration'])
     if projection.get('historical_mapping'):
         st.caption('Hipótese histórica: mapeamento de números de urna de 2022. Não implica identidade entre pessoas/candidaturas.')
@@ -129,6 +133,7 @@ if projection:
         st.dataframe(df, hide_index=True)
         st.write('Volume válido restante estimado com cobertura do eleitorado, taxa observada (>5% das seções) ou hipótese de 75%. Seção não é unidade uniforme de votos.')
         st.write('A incerteza Dirichlet é aplicada apenas aos votos restantes. Votos já apurados permanecem fixos. Probabilidades extremas têm suavização de Jeffreys; não significam certeza.')
+        st.write('Arquivos de UF defasados são excluídos. O volume restante é reconciliado com o eleitorado nacional; a parcela sem cobertura usa a distribuição nacional e taxa válida de 75%.')
         st.write(projection['assumptions'])
 else:
     st.info('Aguardando votos válidos para calcular uma projeção.')

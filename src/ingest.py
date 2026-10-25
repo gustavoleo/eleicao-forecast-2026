@@ -14,6 +14,35 @@ from .storage import Storage
 from .project import project, certainty_gate
 from .history import load_history
 
+def fresh_national(stats, checked_at, now, has_error=False):
+    checked_age = (now - datetime.fromisoformat(checked_at)).total_seconds()
+    generated_age = (now - datetime.fromisoformat(stats['generated_at'])).total_seconds()
+    return (-60 <= checked_age < 120 and generated_age >= -60
+            and (generated_age < 300 or stats['final']) and not has_error)
+
+def synchronized_regions(results, checked, errors, now, interval=60):
+    """Only combine recently checked UF files compatible with the BR generation."""
+    national_time = datetime.fromisoformat(results['br'][1]['generated_at'])
+    accepted, excluded = {}, {}
+    for uf, data in results.items():
+        if uf == 'br':
+            continue
+        stats = data[1]
+        source_time = datetime.fromisoformat(stats['generated_at'])
+        check_time = datetime.fromisoformat(checked[uf]) if uf in checked else None
+        reason = None
+        if uf in errors or check_time is None or not -60 <= (now-check_time).total_seconds() < max(120, 2*interval):
+            reason = 'consulta ausente, antiga ou com erro'
+        elif (source_time-now).total_seconds() > 60:
+            reason = 'geração no futuro'
+        elif not stats.get('final') and abs((source_time-national_time).total_seconds()) > 300:
+            reason = 'geração difere do Brasil por mais de cinco minutos'
+        if reason:
+            excluded[uf] = reason
+        else:
+            accepted[uf] = data
+    return accepted, excluded
+
 class Ingestor:
     def __init__(self, settings=None):
         self.settings = settings or Settings()
@@ -84,19 +113,34 @@ class Ingestor:
                      regions=[dict(**s, checked_at=self.checked.get(uf)) for uf, (_, s) in self.results.items() if uf != 'br'])
         if 'br' in self.results:
             br, stats = self.results['br']
-            checked_age = (now - datetime.fromisoformat(self.checked['br'])).total_seconds()
             generated_age = (now - datetime.fromisoformat(stats['generated_at'])).total_seconds()
-            fresh = checked_age < 120 and (generated_age < 300 or stats['final']) and 'br' not in self.errors
+            fresh = fresh_national(stats, self.checked['br'], now, 'br' in self.errors)
             state.update(stats=stats, official_candidates=br.to_dict('records'), source_age_seconds=generated_age,
                          stale=not fresh, gate=certainty_gate(br, stats, fresh=fresh))
-            regions = {uf: data for uf, data in self.results.items() if uf != 'br'}
+            regions, excluded = synchronized_regions(self.results, self.checked, self.errors, now, self.settings.uf_interval)
+            state['excluded_regions'] = excluded
             region_ready = set(regions) == set(UFS)
             if force_project or time.monotonic() - self.last_project_time >= self.settings.projection_interval:
                 if stats['valid_votes'] > 0:
                     seed = int(hashlib.sha256(json.dumps({uf:s['hash'] for uf, (_,s) in self.results.items()}, sort_keys=True).encode()).hexdigest()[:8], 16)
-                    self.last_projection = project(br, stats, regions, self.history, int(os.getenv('SIMULATION_DRAWS', '5000')), seed)
+                    try:
+                        projection = project(br, stats, regions, self.history, int(os.getenv('SIMULATION_DRAWS', '5000')), seed)
+                    except (ValueError, KeyError) as exc:
+                        # An inconsistent model input must not kill the official
+                        # collector or prevent publication of its independent gate.
+                        self.errors['projection'] = type(exc).__name__ + ': ' + str(exc)
+                        state['errors'] = self.errors.copy()
+                        state.update(projection=self.last_projection, timeline=self.timeline)
+                        self.last_project_time = time.monotonic()
+                        atomic_json(self.settings.data_dir / 'public.json', state)
+                        logging.warning('PROJECTION unavailable %s', type(exc).__name__)
+                        return state
+                    self.errors.pop('projection', None)
+                    state['errors'] = self.errors.copy()
+                    self.last_projection = projection
                     self.last_projection['ts'] = now.isoformat()
                     self.last_projection['geographic_complete'] = region_ready
+                    self.last_projection['excluded_regions'] = excluded
                     rows = pd.DataFrame(self.last_projection['candidates'])
                     rows['ts'], rows['election'] = now.isoformat(), self.meta['codigo_eleicao']
                     self.storage.ingest(rows, 'votes_projected')

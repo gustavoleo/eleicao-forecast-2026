@@ -1,0 +1,67 @@
+[
+  {
+    "url": "https://resultados.tse.jus.br/oficial/ele2026/6258/config/mun-e006258-cm.json",
+    "sha256": "e4a2f2d45bac325f486e1866973fd65ae86744896d0f19e791b0bbb58d86e839",
+    "bytes": 534026,
+    "checked_at": "2026-10-25T21:36:11.586072+00:00",
+    "keys": [
+      "dg",
+      "hg",
+      "idg",
+      "f",
+      "abr"
+    ],
+    "official": "o",
+    "territory": null,
+    "municipalities": 5757,
+    "sections": 0,
+    "available_sections": 0
+  },
+  {
+    "url": "https://resultados.tse.jus.br/oficial/ele2026/6258/dados/ac/ac01120-c0001-e006258-u.json",
+    "sha256": "a0ef7180a52fa95ff1461150917762527f8484fb619ad9c43643437d649f0da5",
+    "bytes": 2864,
+    "checked_at": "2026-10-25T21:36:12.020632+00:00",
+    "keys": [
+      "ele",
+      "t",
+      "f",
+      "sup",
+      "tpabr",
+      "cdabr",
+      "dg",
+      "hg",
+      "idg",
+      "dt",
+      "ht",
+      "dv",
+      "tf",
+      "and",
+      "carg",
+      "s",
+      "e",
+      "v"
+    ],
+    "official": "o",
+    "territory": "01120"
+  },
+  {
+    "url": "https://resultados.tse.jus.br/oficial/ele2026/arquivo-urna/3221/config/ac/ac-p003221-cs.json",
+    "sha256": "93cbb6c00d8dfd78ad1afb75df0e35f40c53dfcc8140d14aea36f84eaa1f45be",
+    "bytes": 56185,
+    "checked_at": "2026-10-25T21:36:12.489914+00:00",
+    "keys": [
+      "dg",
+      "hg",
+      "idg",
+      "f",
+      "cdp",
+      "abr"
+    ],
+    "official": "o",
+    "territory": null,
+    "municipalities": 22,
+    "sections": 2411,
+    "available_sections": 23
+  }
+]
