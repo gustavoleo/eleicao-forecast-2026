@@ -1,0 +1,30 @@
+{
+  "dashboard_url": "https://eleicoes2026.computadorpira.com",
+  "repo_url": "https://github.com/gustavoleo/eleicao-forecast-2026",
+  "verified_at": "2026-10-25T21:27:40.322373+00:00",
+  "image_tag": "localhost/eleicoes2026:20261025-v3",
+  "code_commit": "ee9dc4ba741e488d991061bbf48c5d2a1aacf6f0",
+  "backend": "DuckDB",
+  "public_health": {
+    "healthy": true
+  },
+  "projection_rows": 28,
+  "source_generated_at": "2026-10-25T20:06:31+00:00",
+  "gate": {
+    "status": "undecided",
+    "candidate_id": null,
+    "goal_satisfied": false,
+    "reason": "Exige arquivo oficial nacional válido e consulta recente.",
+    "remaining_bound": null
+  },
+  "automation_id": "election-dashboard-health-and-result",
+  "automation_interval_minutes": 5,
+  "poll_br_seconds": 15,
+  "poll_uf_seconds": 60,
+  "ui_refresh_seconds": 60,
+  "historical_proxy": {
+    "13": "13",
+    "22": "22"
+  },
+  "deployment": "Existing native Windows Podman WSL2 + persistent named volume + Cloudflare Tunnel"
+}
