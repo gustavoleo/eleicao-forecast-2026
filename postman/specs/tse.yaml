@@ -1,11 +1,34 @@
 openapi: 3.0.3
 info:
   title: TSE public EA11 and EA20 read contract
-  version: 1.0.0
+  version: 1.1.0
   description: Observed official 2026 JSON contract. No credentials. User-Agent identifies operator. Responses and conditional validators captured from live TSE.
 servers:
   - url: https://resultados.tse.jus.br/oficial
 paths:
+  /{cycle}/{election}/config/{filename}:
+    get:
+      operationId: discoverMunicipalities
+      parameters:
+        - {name: cycle, in: path, required: true, schema: {type: string}}
+        - {name: election, in: path, required: true, schema: {type: string}}
+        - {name: filename, in: path, required: true, schema: {type: string}, description: 'mun-e<election6>-cm.json'}
+      responses:
+        '200':
+          description: EA12 official municipality directory; abr[].cd is UF and abr[].mu[].cd is the five-digit TSE municipal code
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [f, abr]
+                properties:
+                  f: {type: string, enum: [o, s]}
+                  abr: {type: array, items: {type: object}}
+        '304': {description: Cached directory unchanged}
+        '403': {description: Blocked; suspend origin requests}
+        '404': {description: Directory not published}
+        '429': {description: Rate limited; honor Retry-After}
+        '500': {description: Provider failure}
   /comum/config/ele-c.json:
     get:
       operationId: discoverElections
@@ -30,12 +53,12 @@ paths:
         - {name: cycle, in: path, required: true, schema: {type: string}}
         - {name: election, in: path, required: true, schema: {type: string}}
         - {name: uf, in: path, required: true, schema: {type: string}}
-        - {name: filename, in: path, required: true, schema: {type: string}, description: '<uf>-c<cargo4>-e<election6>-u.json'}
+        - {name: filename, in: path, required: true, schema: {type: string}, description: '<uf>-c<cargo4>-e<election6>-u.json or <uf><municipality5>-c<cargo4>-e<election6>-u.json'}
         - {name: If-None-Match, in: header, schema: {type: string}}
         - {name: If-Modified-Since, in: header, schema: {type: string}}
       responses:
         '200':
-          description: EA20 national or UF result; candidate hierarchy carg.agr.par.cand
+          description: EA20 national, UF or municipal result; candidate hierarchy carg.agr.par.cand. Municipal cdabr is the five-digit municipal code and tpabr is mu. UF ownership comes from EA12 and the requested URL, not sup.
           content:
             application/json:
               schema:

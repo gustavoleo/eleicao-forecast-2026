@@ -95,3 +95,39 @@ def load_history(settings, storage):
     storage.ingest(result, 'historical_2022')
     logging.info('HISTORY official_2022 rows=%d territories=%d', len(result), result.uf.nunique())
     return result
+
+def load_municipal_history(settings, storage):
+    """Reuse the hash-verified presidential CSV already fetched for UF history."""
+    table = 'historical_municipal_2022'
+    if storage.exists(table):
+        return storage.query(f'SELECT * FROM {table}')
+    cache = settings.data_dir / 'historical'
+    source = json.loads((cache / 'source.json').read_text(encoding='utf-8'))
+    csv = cache / (source['csv_sha256'] + '.csv')
+    if hashlib.sha256(csv.read_bytes()).hexdigest() != source['csv_sha256']:
+        raise ValueError('Historical municipal CSV hash mismatch')
+    result = aggregate_municipal_history(csv)
+    result.to_parquet(cache / 'municipios-presidente-2022.parquet', index=False)
+    storage.ingest(result, table)
+    logging.info('HISTORY municipal_2022 rows=%d territories=%d',len(result),result.uf.nunique())
+    return result
+
+def aggregate_municipal_history(csv):
+    columns = ['NR_TURNO','SG_UF','CD_MUNICIPIO','CD_CARGO','NR_CANDIDATO','NM_CANDIDATO','QT_VOTOS_NOMINAIS_VALIDOS']
+    group = ['NR_TURNO','SG_UF','CD_MUNICIPIO','NR_CANDIDATO','NM_CANDIDATO']
+    parts = []
+    for chunk in pd.read_csv(csv,encoding='latin1',sep=';',usecols=columns,chunksize=50000,dtype=str):
+        chunk = chunk[chunk.CD_CARGO=='1'].copy()
+        chunk['QT_VOTOS_NOMINAIS_VALIDOS'] = pd.to_numeric(chunk.QT_VOTOS_NOMINAIS_VALIDOS,errors='raise')
+        if (chunk.QT_VOTOS_NOMINAIS_VALIDOS < 0).any():
+            raise ValueError('Negative historical votes')
+        parts.append(chunk.groupby(group,as_index=False).QT_VOTOS_NOMINAIS_VALIDOS.sum())
+    result = pd.concat(parts).groupby(group,as_index=False).QT_VOTOS_NOMINAIS_VALIDOS.sum()
+    result = result.rename(columns={'NR_TURNO':'round','SG_UF':'parent_uf','CD_MUNICIPIO':'municipality',
+        'NR_CANDIDATO':'candidate_id','NM_CANDIDATO':'full_name','QT_VOTOS_NOMINAIS_VALIDOS':'votes'})
+    result['round'] = result['round'].astype(int)
+    result['parent_uf'] = result.parent_uf.str.lower()
+    result['municipality'] = result.municipality.str.zfill(5)
+    result['uf'] = result.parent_uf + ':' + result.municipality
+    result['share'] = result.votes / result.groupby(['round','uf']).votes.transform('sum')
+    return result.fillna({'share':0.})

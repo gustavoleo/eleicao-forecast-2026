@@ -1,0 +1,278 @@
+{
+  "published_at": "2026-10-25T22:13:27.545572+00:00",
+  "stats": {
+    "election": "6258",
+    "uf": "br",
+    "cargo": "1",
+    "round": 2,
+    "generated_at": "2026-10-25T22:12:36+00:00",
+    "sections_total": 499248,
+    "sections_counted": 8441,
+    "apurado_pct": 1.6907428772874402,
+    "electorate": 158745502,
+    "counted_electorate": 2925229,
+    "remaining_electors": 155820273,
+    "valid_votes": 2103669,
+    "bound_complete": true,
+    "uncounted_electors": 0,
+    "uninstalled_electors": 423,
+    "unresolved_votes": 0,
+    "final": false,
+    "official": true,
+    "mathematical_flag": "n",
+    "no_winner": false,
+    "hash": "6def60c0642f2e251d389d67da20a9c423bb4f766fe9c4fb28737a232ea9386d"
+  },
+  "gate": {
+    "status": "undecided",
+    "candidate_id": null,
+    "goal_satisfied": false,
+    "reason": "Os votos ainda podem alterar o resultado.",
+    "remaining_bound": 155820696,
+    "inequality": "1,095,856 > 1,007,813 + 155,820,696"
+  },
+  "errors": {},
+  "municipalities": {
+    "enabled": true,
+    "discovered": 5757,
+    "collected": 1344,
+    "planned_sweep_seconds": 1520.3345070422533,
+    "historical_status": "loaded:74763"
+  },
+  "history_status": "loaded:364",
+  "official_candidates": [
+    {
+      "candidate_id": "22",
+      "name": "FLAVIO BOLSONARO",
+      "votes": 1007813,
+      "elected": false,
+      "destination": "Válido",
+      "party": "PL",
+      "official_status": "",
+      "full_name": "FLAVIO NANTES BOLSONARO",
+      "election": "6258",
+      "uf": "br",
+      "cargo": "1",
+      "round": 2,
+      "generated_at": "2026-10-25T22:12:36+00:00",
+      "apurado_pct": 1.6907428772874402,
+      "share": 0.4790739417655534
+    },
+    {
+      "candidate_id": "13",
+      "name": "LULA",
+      "votes": 1095856,
+      "elected": false,
+      "destination": "Válido",
+      "party": "PT",
+      "official_status": "",
+      "full_name": "LUIZ INÁCIO LULA DA SILVA",
+      "election": "6258",
+      "uf": "br",
+      "cargo": "1",
+      "round": 2,
+      "generated_at": "2026-10-25T22:12:36+00:00",
+      "apurado_pct": 1.6907428772874402,
+      "share": 0.5209260582344466
+    }
+  ],
+  "primary_forecast": {
+    "status": "insufficient_history",
+    "observations": 14,
+    "minimum_observations": 12,
+    "reason": "Série curta ou lacunas superiores a dez pontos percentuais de apuração.",
+    "progress_start": 0.24536903502868315,
+    "progress_end": 1.66870973944813,
+    "grid_points": 1,
+    "source_hashes": [
+      "56540dbdd5b563f73e2f18c3299f043a25938589c29809ecc88e434968ea6870",
+      "a96dc8033793e837b0050cef3400c807803c214f85a29347fab0c57e9452c3cc",
+      "3830e7a1a91b54491c5bbf09bf6a2e67d0837a0c1a780fec2bf5198d9b299117",
+      "c38de16aa15fa95e13cae61151b1fdedfab7b94477a90b32cdf1e824db1b3358",
+      "ed915ccf71d9823a54c1bc62bbaeb6e37e4e50ed74d0f2add8f277804f765ee5",
+      "1109618c370da3b7af69a2904a413badc5ca29649641c5e813c2c5da2a5e69e1",
+      "e9f951478e6324f9728f32e59c96891024557f4c8427e06a13e2933fc0f18033",
+      "2eb1c4d1fa929e3711cfbd31aa9f7c7944ac625d36cf233da7cf47ab693f9ad7",
+      "5e6b34a874414988db90407a9fb2868f8d3adc647226a2bd8f3bae97dccb4ab8",
+      "3dd3cedaed28eb698e059737a12dc38240ce70acb3b2a96381ade5770047de9f",
+      "927fe11479fc9c963edadfc7f6e9ad9d6597d6a6b9ec060dafb7aebebe34ff5b",
+      "5f2470e6fecda25c22bd61d4a27a9f832d60ba5822f8218a994b77679ec0ab66",
+      "e03349fd01cc7d59426d3bf2c2b6b8fd6524ebe44e4ba232eba457d9d9f5b522",
+      "feb97a1ebd36d1d04fbec8f0541ac4c89400feef3c36b72dfcdca2d041950c79"
+    ],
+    "engine": "anofox_forecast",
+    "extension_version": "v2026.10.22",
+    "validation": "Chronological selection, separate calibration and final holdout; no election-wide calibration claim.",
+    "geographic_adjustment": {
+      "adjusted_snapshots": 2,
+      "municipalities_used": 552,
+      "historical_units": 5738,
+      "anchor_shares": {
+        "13": 0.4862195429601965,
+        "22": 0.5137804570398036
+      },
+      "method": "As-of, reconciled reporting mix; historical log-ratio residuals"
+    }
+  },
+  "state_calls": {
+    "ac": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 585850
+    },
+    "al": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 2427370
+    },
+    "ap": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 566315
+    },
+    "am": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": null
+    },
+    "ba": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 11278749
+    },
+    "ce": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 6987152
+    },
+    "df": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 2003317
+    },
+    "es": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 2987466
+    },
+    "go": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 5073417
+    },
+    "ma": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 5111526
+    },
+    "mt": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 2564586
+    },
+    "ms": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 2015178
+    },
+    "mg": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 16201233
+    },
+    "pa": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 5836025
+    },
+    "pb": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 3060981
+    },
+    "pr": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 8149141
+    },
+    "pe": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 7203679
+    },
+    "pi": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 2694904
+    },
+    "rj": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 12856574
+    },
+    "rn": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 2633270
+    },
+    "rs": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 8489879
+    },
+    "ro": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 1194299
+    },
+    "rr": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": null
+    },
+    "sc": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 5641055
+    },
+    "sp": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 34118029
+    },
+    "se": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": null
+    },
+    "to": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 1119849
+    },
+    "zz": {
+      "status": "undecided",
+      "candidate_id": null,
+      "remaining_bound": 363275
+    }
+  },
+  "first_round_comparison": [
+    [
+      {
+        "Candidato": "FLAVIO BOLSONARO",
+        "1º turno": 56104503,
+        "2º turno parcial": 1007813,
+        "Votos iguais": false,
+        "Variação (p.p.)": 0.88
+      },
+      {
+        "Candidato": "LULA",
+        "1º turno": 53879538,
+        "2º turno parcial": 1095856,
+        "Votos iguais": false,
+        "Variação (p.p.)": 6.93
+      }
+    ],
+    "22"
+  ]
+}

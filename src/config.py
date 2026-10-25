@@ -21,6 +21,8 @@ class Settings:
     uf_interval: float = field(default_factory=lambda: max(60., float(os.getenv('UF_INTERVAL', '60'))))
     projection_interval: float = field(default_factory=lambda: max(60., float(os.getenv('PROJECTION_INTERVAL', '60'))))
     rps: float = field(default_factory=lambda: min(10., max(.1, float(os.getenv('MAX_REQUESTS_PER_SECOND', '2')))))
+    municipal_enabled: bool = field(default_factory=lambda: os.getenv('MUNICIPAL_ENABLED', '1') == '1')
+    municipal_interval: float = field(default_factory=lambda: max(60., float(os.getenv('MUNICIPAL_INTERVAL', '900'))))
 
     @property
     def user_agent(self):
@@ -59,9 +61,35 @@ def discover_election_meta(client=None, settings=None, payload=None, today=None)
     logging.info('DISCOVERY %s', meta)
     return meta
 
-def build_url(uf, cargo, eleicao, settings=None, cycle=None):
+def build_url(uf, cargo, eleicao, settings=None, cycle=None, municipality=None):
     s = settings or Settings()
     uf = uf.lower()
     if uf not in UFS + ['br']:
         raise ValueError(f'Unknown UF: {uf}')
-    return f'{s.base_url}/{cycle or s.cycle}/{int(eleicao)}/dados/{uf}/{uf}-c{int(cargo):04d}-e{int(eleicao):06d}-u.json'
+    prefix = uf
+    if municipality is not None:
+        if uf == 'br' or not str(municipality).isdigit() or not 0 < int(municipality) <= 99999:
+            raise ValueError('Invalid municipal territory')
+        prefix += f'{int(municipality):05d}'
+    return f'{s.base_url}/{cycle or s.cycle}/{int(eleicao)}/dados/{uf}/{prefix}-c{int(cargo):04d}-e{int(eleicao):06d}-u.json'
+
+def discover_municipalities(client, meta, settings):
+    code = int(meta['codigo_eleicao'])
+    url = f'{settings.base_url}/{settings.cycle}/{code}/config/mun-e{code:06d}-cm.json'
+    payload = client.fetch(url).payload
+    if payload.get('f') != 'o':
+        raise ValueError('Municipality directory is not official')
+    result = {}
+    for region in payload.get('abr', []):
+        uf = region['cd'].lower()
+        if uf not in UFS or uf in result:
+            raise ValueError('Invalid or duplicate municipality parent UF')
+        municipalities = [str(m['cd']).zfill(5) for m in region['mu']]
+        if not municipalities or len(set(municipalities)) != len(municipalities):
+            raise ValueError('Empty or duplicate municipality directory')
+        for code in municipalities:
+            build_url(uf, meta['cargo'], meta['codigo_eleicao'], settings, municipality=code)
+        result[uf] = sorted(municipalities)
+    if set(result) != set(UFS):
+        raise ValueError('Municipality directory does not cover all UFs and overseas')
+    return result

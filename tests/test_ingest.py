@@ -48,3 +48,21 @@ def test_model_failure_does_not_stop_official_publication(tmp_path,monkeypatch):
         assert json.loads((tmp_path/'public.json').read_text(encoding='utf-8'))['stats']==state['stats']
     finally:
         worker.storage.close()
+
+def test_restart_restores_municipal_payload_without_claiming_new_fetch(tmp_path,monkeypatch):
+    import json,hashlib
+    from pathlib import Path
+    from src.config import Settings,build_url
+    from src.ingest import Ingestor
+    monkeypatch.delenv('HARDCHARGER_URI',raising=False)
+    worker=Ingestor(Settings(data_dir=tmp_path,contact='test@example.com'))
+    worker.meta={'codigo_eleicao':'6258','cargo':'1'}
+    body=(Path(__file__).parent/'fixtures/municipal-live.json').read_text(encoding='utf-8')
+    checked=(NOW-timedelta(seconds=10)).isoformat()
+    worker.storage.ingest(pd.DataFrame([dict(ts=checked,uf='ac:01120',election='6258',payload_hash=hashlib.sha256(body.encode()).hexdigest(),payload=body,source_url=build_url('ac',1,6258,municipality='01120'))]),'raw_turbo')
+    try:
+        worker.restore_cached_units()
+        assert 'ac:01120' in worker.municipal_results
+        assert worker.checked['ac:01120']==checked
+        assert worker.client.requests_total==0
+    finally: worker.storage.close()

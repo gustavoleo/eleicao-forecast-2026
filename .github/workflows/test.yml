@@ -12,4 +12,7 @@ jobs:
           python-version: '3.12'
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q
+        env:
+          ANOFOX_INTEGRATION: '1'
+          DATAZOO_DISABLE_TELEMETRY: '1'
       # HTTP/Postman integration is separately evidenced locally and skips without POSTMAN_SIM_URL.

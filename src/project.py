@@ -6,7 +6,27 @@ import os
 import numpy as np
 import pandas as pd
 
-MODEL_VERSION = 'geo-dirichlet-remaining-v2'
+MODEL_VERSION = 'geo-dirichlet-remaining-v3'
+
+def local_plurality_gate(frame,stats,fresh=True):
+    """Who cannot lose the local presidential tally, not a state election office.
+
+    The presidency is decided nationally. UF colors never elect a president.
+    """
+    result=dict(status='undecided',candidate_id=None,remaining_bound=None)
+    if (not fresh or not stats.get('official') or stats.get('uf') in ('br',None)
+            or stats.get('cargo')!='1' or stats.get('no_winner')
+            or not stats.get('bound_complete') or stats.get('remaining_electors') is None
+            or stats.get('unresolved_votes',0)):
+        return result
+    eligible=frame[frame.destination.str.casefold().isin(['válido','valido',''])].sort_values('votes',ascending=False)
+    if len(eligible)<2 or stats.get('valid_votes',0)<=0:
+        return result
+    remaining=stats['remaining_electors']+stats.get('uncounted_electors',0)+stats.get('uninstalled_electors',0)
+    result['remaining_bound']=remaining
+    if int(eligible.iloc[0].votes)>int(eligible.iloc[1].votes)+remaining:
+        result.update(status='mathematically_secured',candidate_id=str(eligible.iloc[0].candidate_id))
+    return result
 
 def certainty_gate(frame, stats, fresh=True):
     result = dict(status='undecided', candidate_id=None, goal_satisfied=False,
@@ -56,7 +76,7 @@ def normalize(values):
     values = np.maximum(np.asarray(values, dtype=float), 1e-8)
     return values / values.sum()
 
-def project(national, stats, regions, historical=None, draws=5000, seed=42):
+def project(national, stats, regions, historical=None, draws=5000, seed=42, primary=None):
     if draws < 5000:
         raise ValueError('At least 5000 simulations are required')
     national = national[national.destination.str.casefold().isin(['válido', 'valido', ''])].sort_values('candidate_id').copy()
@@ -68,9 +88,14 @@ def project(national, stats, regions, historical=None, draws=5000, seed=42):
     historical = historical if historical is not None else pd.DataFrame()
     mapping = json.loads(os.getenv('HISTORICAL_CANDIDATE_MAP', '{}'))
     priors, flags, confident = {}, [], []
+    history_groups = {uf:group for uf,group in historical[historical['round']==stats['round']].groupby('uf')} if not historical.empty else {}
     for uf, (votes, s) in regions.items():
         partial = votes.set_index('candidate_id').votes.reindex(ids, fill_value=0).to_numpy(dtype=float)
-        old = historical[(historical.uf == uf) & (historical['round'] == stats['round'])] if not historical.empty else historical
+        old = history_groups.get(uf, pd.DataFrame())
+        if old.empty and ':' in uf:
+            old = history_groups.get(uf.split(':')[0],pd.DataFrame())
+            if not old.empty:
+                flags.append(f'{uf.upper()}: histórico municipal indisponível; prior da UF')
         prior = baseline.copy()
         if not old.empty:
             old_ids = old.set_index('candidate_id')
@@ -122,7 +147,16 @@ def project(national, stats, regions, historical=None, draws=5000, seed=42):
     remaining_total = remaining_by_candidate.sum()
     scale = concentration(stats['apurado_pct'])
     rng = np.random.default_rng(seed)
-    if remaining_total > 0:
+    engine='geographic_dirichlet'
+    if remaining_total > 0 and primary and primary.get('status')=='ready':
+        targets=np.array([primary['target_shares'][i] for i in ids])
+        future=np.maximum(0,targets*(observed.sum()+remaining_total)-observed)
+        remaining_by_candidate=normalize(future)*remaining_total
+        raw=np.maximum(0,primary['_share_draws']*(observed.sum()+remaining_total)-observed)
+        raw=np.maximum(raw,1e-8)
+        counts=observed+raw/raw.sum(axis=1,keepdims=True)*remaining_total
+        engine='anofox_forecast'
+    elif remaining_total > 0:
         simulated_remaining = rng.dirichlet(normalize(remaining_by_candidate) * scale, size=draws) * remaining_total
         counts = observed + simulated_remaining
     else:
@@ -157,10 +191,10 @@ def project(national, stats, regions, historical=None, draws=5000, seed=42):
         pairs.sort(key=lambda x: -x['probability'])
     return dict(candidates=sorted(output, key=lambda x: -x['projected_share']), pairings=pairs,
                 p_any_runoff=float(runoff.mean()) if stats['round'] == 1 else None,
-                draws=draws, seed=seed, alpha_scale=scale, model_version=MODEL_VERSION,
+                draws=draws, seed=seed, alpha_scale=scale, model_version=MODEL_VERSION,engine=engine,
                 historical_mapping=mapping, assumptions=sorted(set(flags)),
                 remaining_valid_estimate=float(remaining_total), geographic_units=len(regions),
                 national_pending_electorate=int(national_pending),
                 uncovered_pending_electorate=int(uncovered_pending),
                 regional_reconciliation_factor=float(reconciliation_factor),
-                calibration='Heurística não calibrada empiricamente. IC de 90% condicionado ao modelo; não inclui todos os erros sistemáticos.')
+                calibration=(primary['uncertainty'] if engine=='anofox_forecast' else 'Heurística não calibrada empiricamente. IC de 90% condicionado ao modelo; não inclui todos os erros sistemáticos.'))

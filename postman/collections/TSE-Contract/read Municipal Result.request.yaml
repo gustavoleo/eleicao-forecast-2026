@@ -1,0 +1,18 @@
+$kind: http-request
+url: '{{baseUrl}}/ele2026/6258/dados/ac/ac01120-c0001-e006258-u.json'
+method: GET
+headers:
+  - key: User-Agent
+    value: 'EleicaoForecast/1.0 (+{{contact}})'
+order: 4000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Municipal EA20 identifies the requested locality and reconciles electorate', () => {
+        pm.response.to.have.status(200);
+        const p=pm.response.json();
+        pm.expect(p.tpabr).to.eql('mu');
+        pm.expect(p.cdabr).to.eql('01120');
+        pm.expect(Number(p.e.est)+Number(p.e.esnt)).to.eql(Number(p.e.te));
+      });

@@ -1,0 +1,7 @@
+ARG APP_IMAGE=localhost/eleicoes2026:current
+FROM ${APP_IMAGE}
+USER root
+RUN pip install --no-cache-dir pytest==9.1.1
+USER app
+ENV ANOFOX_INTEGRATION=1 PYTHONPATH=/app
+CMD ["python","-m","pytest","-q","/tests","-p","no:cacheprovider"]

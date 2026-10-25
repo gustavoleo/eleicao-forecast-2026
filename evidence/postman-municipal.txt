@@ -1,0 +1,47 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+TSE-Contract
+
+Root discover Elections
+
+  GET http://127.0.0.1:4900/tse/oficial/comum/config/ele-c.json [200 OK, 20.55 KB, 8 ms]
+  Pass  EA11 is an official election configuration
+
+Root read Unified Result
+
+  GET http://127.0.0.1:4900/tse/oficial/ele2026/fixture/dados/br/result.json [200 OK, 2.75 KB, 3 ms]
+  Pass  EA20 contains candidates and reconciled electorate
+
+Root discover Municipalities
+
+  GET http://127.0.0.1:4900/tse/oficial/ele2026/6258/config/mun-e006258-cm.json [200 OK, 408.35 KB, 29 ms]
+  Pass  Real EA12 fixture includes 28 UFs and 5757 municipal localities
+
+Root read Municipal Result
+
+  GET http://127.0.0.1:4900/tse/oficial/ele2026/6258/dados/ac/ac01120-c0001-e006258-u.json [200 OK, 2.44 KB, 2 ms]
+  Pass  Municipal EA20 identifies the requested locality and reconciles electorate
+
+---------------------------------------------------------------------
+|                         |           executed |             failed |
+--------------------------+--------------------+---------------------
+|              iterations |                  1 |                  0 |
+--------------------------+--------------------+---------------------
+|                requests |                  4 |                  0 |
+--------------------------+--------------------+---------------------
+|            test-scripts |                  4 |                  0 |
+--------------------------+--------------------+---------------------
+|      prerequest-scripts |                  0 |                  0 |
+--------------------------+--------------------+---------------------
+|              assertions |                  4 |                  0 |
+---------------------------------------------------------------------
+| total run duration: 273 ms                                        |
+---------------------------------------------------------------------
+| total data received: 433.38 KB (approx)                           |
+---------------------------------------------------------------------
+| average response time: 11 ms [min: 2 ms, max: 29 ms, s.d.: 11 ms] |
+---------------------------------------------------------------------

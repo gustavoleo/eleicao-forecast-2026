@@ -1,0 +1,18 @@
+$kind: http-request
+url: '{{baseUrl}}/ele2026/6258/config/mun-e006258-cm.json'
+method: GET
+headers:
+  - key: User-Agent
+    value: 'EleicaoForecast/1.0 (+{{contact}})'
+order: 3000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Real EA12 fixture includes 28 UFs and 5757 municipal localities', () => {
+        pm.response.to.have.status(200);
+        const p=pm.response.json();
+        pm.expect(p.f).to.eql('o');
+        pm.expect(p.abr.length).to.eql(28);
+        pm.expect(p.abr.reduce((n,a)=>n+a.mu.length,0)).to.eql(5757);
+      });
