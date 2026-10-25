@@ -170,3 +170,9 @@ Verification: `evidence/pytest-anofox-linux.txt` covers the actual signed extens
 ## Geographic calculation performance
 
 The as-of calibration now builds candidate matrices with vectorized grouping and pivoting while retaining exact candidate totals, payload coherence, identity matching and no-future-observation rules. On the same stopped-container database backup (75,127 historical rows, 18 national candidate rows, 1,730 regional candidate rows), the two functions fell from 6.10 seconds to 0.113 seconds combined, with identical outputs. This is a local benchmark, not a production throughput guarantee. See `evidence/geography-performance.json` and the 63 passing core tests in `evidence/pytest-geography-performance.txt`; the six HTTP cases remain separately evidenced.
+
+## Paired official and forecast charts
+
+The official tally now sits beside **Previsão com AnoFox e Hardcharger by Gizmo Data** on desktop; the cards stack on mobile. Candidate forecast bars and intervals appear only when the primary AnoFox validation gate passes and source/model health permits publication. Otherwise the card shows labeled waiting tracks, not invented percentages or an auxiliary forecast presented as AnoFox. It identifies the actual storage backend: the current deployment uses DuckDB and explicitly reports Hardcharger as disconnected.
+
+The map defaults to mathematical definitions only. The optional **Mostrar liderança parcial (ainda pode mudar)** control adds pale candidate colors for fresh, untied official leaders. Those colors never set a mathematical/elected flag; solid colors remain exclusive to the conservative local bound. An explanation is shown when no state qualifies for a solid color. Tests cover opt-in semantics, upstream errors, pending validation and stale-model suppression (`evidence/pytest-forecast-card.txt`: 65 core passes, six separately evidenced HTTP cases skipped).

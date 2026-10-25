@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
-from src.presentation import CSS,scorecard,brazil_map,state_calls,compare_rounds
+from src.presentation import CSS,scorecard,forecast_card,brazil_map,state_calls,compare_rounds
 
 st.set_page_config(page_title='Brasil 2026 · Observatório eleitoral', page_icon='🗳️', layout='wide')
 if os.getenv('AUTOREFRESH_MODE', 'native') == 'component':
@@ -69,7 +69,11 @@ meta = state.get('meta') or {}
 stats = state.get('stats') or {}
 source_age = (now - datetime.fromisoformat(stats['generated_at'])).total_seconds() if stats else 0
 stale = state.get('stale', True) or collector_age > 120
-st.html(scorecard(state.get('official_candidates',[]),stats))
+official_column,forecast_column=st.columns(2,gap='small')
+with official_column:
+    st.html(scorecard(state.get('official_candidates',[]),stats))
+with forecast_column:
+    st.html(forecast_card(state,stale=stale))
 clock_label='Fonte sem atualização recente' if stale else 'Consultando o TSE'
 st.html(f'<div class="source-clock"><span><span class="dot"></span>{clock_label}</span><span>Arquivo {brtime(stats.get("generated_at"))[11:19]} BRT</span></div>')
 if stale:
@@ -86,10 +90,19 @@ if gate.get('inequality'):
         st.caption('Teste conservador para vitória: ' + gate['inequality'] + ' — ' + ('satisfeito' if gate.get('goal_satisfied') else 'ainda não satisfeito'))
 view=st.radio('Visualização',['Mapa','Previsão','Resultados'],horizontal=True,label_visibility='collapsed')
 if view=='Mapa':
-    st.html('<div class="map-legend"><span><i style="background:#f32d42"></i>13 · assegurado na UF</span><span><i style="background:#4568e9"></i>22 · assegurado na UF</span><span><i style="background:#555e4c"></i>Indefinido</span></div>')
-    encoded_map=base64.b64encode(brazil_map(state).encode()).decode()
-    st.html(f'<img class="president-map" alt="Mapa do Brasil: apenas lideranças estaduais matematicamente asseguradas recebem cor" src="data:image/svg+xml;base64,{encoded_map}"/>')
-    st.caption('Cor = liderança local que os votos restantes não podem reverter, condicionada aos dados publicados. Não equivale à eleição nacional. • = mesmo líder do 1º turno. Malha: IBGE.')
+    show_partial=st.checkbox('Mostrar liderança parcial (ainda pode mudar)',value=False)
+    secured_count=sum(call.get('status')=='mathematically_secured' for uf,call in state_calls(state).items() if uf!='zz')
+    if secured_count==0 and not show_partial:
+        st.info('Nenhum estado matematicamente definido ainda. O mapa está cinza porque os votos restantes ainda podem mudar a liderança; isso não é uma falha de carregamento.')
+    else:
+        st.caption(f'{secured_count} de 27 UFs com liderança matematicamente assegurada nos dados publicados.')
+    st.html('<div class="map-legend"><span><i style="background:#f32d42"></i>13</span><span><i style="background:#4568e9"></i>22</span><span><i style="background:#555e4c"></i>Indefinido / sem dados recentes</span></div>')
+    if show_partial:
+        st.caption('Cor clara = líder na apuração parcial, ainda pode mudar. Cor forte = liderança matematicamente assegurada na UF.')
+    encoded_map=base64.b64encode(brazil_map(state,show_partial=show_partial).encode()).decode()
+    map_alt='Mapa do Brasil: liderança parcial em cores claras e definição matemática em cores fortes' if show_partial else 'Mapa do Brasil: apenas lideranças estaduais matematicamente asseguradas recebem cor'
+    st.html(f'<img class="president-map" alt="{map_alt}" src="data:image/svg+xml;base64,{encoded_map}"/>')
+    st.caption('Cor forte = liderança local que os votos restantes não podem reverter, condicionada aos dados publicados. Não equivale à eleição nacional. • = mesmo líder do 1º turno. Malha: IBGE.')
     regions={r['uf']:r for r in state.get('regions',[])}
     first={r['uf']:r for r in state.get('first_round',{}).get('regions',[])}
     options=['br']+sorted(regions)

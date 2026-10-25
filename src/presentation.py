@@ -8,6 +8,7 @@ from .project import local_plurality_gate
 from .ingest import fresh_national
 
 COLORS={'13':'#f32d42','22':'#4568e9'}
+PARTIAL_COLORS={'13':'#98525b','22':'#536da1'}
 UF_CODES=dict(zip('11 12 13 14 15 16 17 21 22 23 24 25 26 27 28 29 31 32 33 35 41 42 43 50 51 52 53'.split(),
                  'ro ac am rr pa ap to ma pi ce rn pb pe al se ba mg es rj sp pr sc rs ms mt go df'.split()))
 LABELS={'ac':(-70,-9.3),'am':(-64,-4),'rr':(-61.6,2),'ap':(-51.8,1.6),'pa':(-53.5,-4.5),
@@ -30,6 +31,7 @@ CSS='''<style>
 .vote-bar div{display:flex;align-items:center;padding:0 10px;white-space:nowrap;font-size:22px;font-weight:750;box-sizing:border-box}
 .vote-bar div:last-child{justify-content:end}.vote-bar span{font-size:11px;font-weight:450;opacity:.85;margin:0 5px}
 .count-note{color:#a8b1a1;font-size:12px;margin-top:12px}.count-note b{color:#58d9a0;font-size:15px}
+.forecast-title{font-size:16px;line-height:1.35;margin:0 0 4px;font-weight:700}.forecast-brand{font-size:11px;color:#65daa1;margin-bottom:16px}.forecast-row{margin:12px 0}.forecast-label{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:6px}.forecast-track{height:15px;border-radius:5px;background:#30342d;overflow:hidden}.forecast-track div{height:100%;border-radius:5px}.forecast-note{font-size:11px;color:#b7beb3;line-height:1.45;margin-top:10px}.forecast-pending{font-size:12px;color:#e4c77a;margin:12px 0}
 .source-clock{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #30332d;border-radius:30px;padding:12px 16px;color:#b6bfb0;font-size:12px;margin-top:12px}
 .source-clock .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ecb64d;margin-right:7px}
 .map-legend{display:flex;gap:15px;flex-wrap:wrap;color:#bbc3b5;font-size:11px;margin:8px 0}.map-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
@@ -56,6 +58,30 @@ def scorecard(candidates,stats):
     <div class="candidate right"><b>{html.escape(b['name'])}</b><small>{html.escape(b.get('party',''))} · {html.escape(b['candidate_id'])}</small></div></div>
     <div class="vote-bar"><div style="width:{width:.4f}%;background:{COLORS.get(a['candidate_id'],'#a67cce')}">{percent(sa)}<span>{compact(a['votes'])}</span></div><div style="width:{100-width:.4f}%;background:{COLORS.get(b['candidate_id'],'#5b95ba')}"><span>{compact(b['votes'])}</span>{percent(sb)}</div></div>
     <div class="count-note"><b>{stats.get('apurado_pct',0):.2f}%</b> das seções totalizadas · {early}</div></div>'''
+
+
+def forecast_card(state,stale=False):
+    projection=state.get('projection') or {}
+    primary=projection.get('primary_forecast') or {}
+    model_error=bool(state.get('errors',{}).get('projection'))
+    ready=bool(projection.get('headline_ready') and primary.get('status')=='ready' and not stale and not model_error)
+    candidates=projection.get('candidates',[]) if ready else state.get('official_candidates',[])
+    candidates=sorted(candidates,key=lambda c:(c['candidate_id']!='13',c['candidate_id']))
+    rows=[]
+    for c in candidates:
+        value=percent(c['projected_share']) if ready else '—'
+        fill=f'<div style="width:{100*c["projected_share"]:.4f}%;background:{COLORS.get(c["candidate_id"],"#9b78c6")}"></div>' if ready else ''
+        interval=f'<div class="forecast-note">Intervalo do modelo: {percent(c["ci_low"])}–{percent(c["ci_high"])}</div>' if ready else ''
+        rows.append(f'<div class="forecast-row"><div class="forecast-label"><span>{html.escape(c["name"])}</span><b>{value}</b></div><div class="forecast-track">{fill}</div>{interval}</div>')
+    status='Cenários estatísticos; não confirmam vencedor.' if ready else ('Fonte desatualizada; previsão suspensa.' if stale else 'Aguardando validação da previsão AnoFox.')
+    if model_error: status='Atualização do modelo indisponível; previsão suspensa.'
+    reason='' if ready else html.escape(primary.get('reason','Aguardando dados oficiais suficientes.'))
+    backend=state.get('backend','DuckDB')
+    backend_note='Armazenamento: Hardcharger / ADBC' if 'Hardcharger' in backend else 'Armazenamento: DuckDB · Hardcharger não conectado'
+    return ('<div class="race"><div class="forecast-title">Previsão com AnoFox e Hardcharger</div>'
+            '<div class="forecast-brand">by Gizmo Data</div>'+''.join(rows)+
+            f'<div class="forecast-pending">{status}</div><div class="forecast-note">{reason}</div>'
+            f'<div class="forecast-note">{backend_note}</div></div>')
 
 def state_calls(state,now=None):
     now=now or datetime.now(timezone.utc)
@@ -89,7 +115,7 @@ def compare_rounds(current,first):
         if same_person: leader=old_leader['candidate_id']
     return rows,leader
 
-def brazil_map(state):
+def brazil_map(state,show_partial=False):
     geo=json.loads((Path(__file__).parent/'assets/br-ufs.geojson').read_text())
     calls=state_calls(state)
     first={r['uf']:r for r in state.get('first_round',{}).get('regions',[])}
@@ -107,6 +133,13 @@ def brazil_map(state):
         _,previous=compare_rounds(regions.get(uf,{}),first.get(uf))
         same=secure and previous==call.get('candidate_id')
         title=uf.upper()+(' · liderança local matematicamente assegurada' if secure else ' · resultado local ainda indefinido')
+        region=regions.get(uf)
+        if show_partial and not secure and region and region.get('official') and region.get('cargo')=='1':
+            fresh=fresh_national(region,region.get('checked_at') or state['published_at'],datetime.now(timezone.utc),uf in state.get('errors',{}))
+            eligible=sorted((c for c in region.get('candidates',[]) if c.get('destination','').casefold() in ('válido','valido','')),key=lambda c:-c['votes'])
+            if fresh and len(eligible)>=2 and eligible[0]['votes']>eligible[1]['votes']:
+                color=PARTIAL_COLORS.get(eligible[0]['candidate_id'],'#746287')
+                title=uf.upper()+' · liderança parcial: '+eligible[0]['name']+' · ainda pode mudar'
         if same:title+=' · mesmo líder do 1º turno'
         shapes.append(f'<a href="?uf={uf}" target="_self" aria-label="{html.escape(title)}"><path d="{path}" fill="{color}" fill-rule="evenodd"><title>{html.escape(title)}</title></path></a>')
         x,y=xy(LABELS[uf]); suffix=' •' if same else ''
@@ -115,4 +148,5 @@ def brazil_map(state):
             labels.append(f'<path d="M{x:.1f},{y:.1f} L430,{ly}" fill="none" style="stroke:#697260;stroke-width:.8"/>')
             x,y=442,ly+4
         labels.append(f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="middle">{uf.upper()}{suffix}</text>')
-    return '<svg xmlns="http://www.w3.org/2000/svg" class="president-map" viewBox="0 0 470 460" role="img" aria-label="Brasil: estados coloridos apenas com liderança matematicamente assegurada"><style>path{stroke:#10110f;stroke-width:1.7}text{font:600 12px system-ui;fill:#c7cec2}</style>'+''.join(shapes+labels)+'</svg>'
+    description='Brasil: cores claras indicam liderança parcial; cores fortes indicam liderança matematicamente assegurada' if show_partial else 'Brasil: estados coloridos apenas com liderança matematicamente assegurada'
+    return '<svg xmlns="http://www.w3.org/2000/svg" class="president-map" viewBox="0 0 470 460" role="img" aria-label="'+description+'"><style>path{stroke:#10110f;stroke-width:1.7}text{font:600 12px system-ui;fill:#c7cec2}</style>'+''.join(shapes+labels)+'</svg>'

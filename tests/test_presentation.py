@@ -3,7 +3,7 @@ from pathlib import Path
 from datetime import datetime,timezone
 import pandas as pd
 from src.project import local_plurality_gate
-from src.presentation import brazil_map,state_calls,compare_rounds,scorecard
+from src.presentation import brazil_map,state_calls,compare_rounds,scorecard,forecast_card,PARTIAL_COLORS
 from src.parse import parse_result
 
 def region(votes=(90,10),remaining=10):
@@ -51,6 +51,34 @@ def test_scorecard_escapes_source_names():
     f.loc[0,'name']='<script>alert(1)</script>'
     markup=scorecard(f.to_dict('records'),s)
     assert '<script>' not in markup and '&lt;script&gt;' in markup
+
+
+def test_partial_map_is_opt_in_and_never_claims_a_secured_result():
+    f,s=region(remaining=100)
+    state=dict(published_at=s['checked_at'],regions=[dict(s,candidates=f.to_dict('records'))],errors={})
+    assert PARTIAL_COLORS['13'] not in brazil_map(state)
+    partial=brazil_map(state,show_partial=True)
+    assert f'fill="{PARTIAL_COLORS["13"]}"' in partial
+    assert 'liderança parcial: 13 · ainda pode mudar' in partial
+    assert 'fill="#f32d42"' not in partial
+    state['errors']['ac']='HTTP 500'
+    assert PARTIAL_COLORS['13'] not in brazil_map(state,show_partial=True)
+
+
+def test_forecast_card_waits_for_validation_and_reports_actual_storage():
+    f,s=region()
+    state=dict(official_candidates=f.to_dict('records'),backend='DuckDB',projection=dict(
+        headline_ready=False,primary_forecast=dict(status='insufficient_history'),
+        candidates=[dict(candidate_id='13',name='13',projected_share=.99)]))
+    markup=forecast_card(state)
+    assert 'Previsão com AnoFox e Hardcharger' in markup and 'by Gizmo Data' in markup
+    assert 'Hardcharger não conectado' in markup and '99,0%' not in markup
+    state['projection'].update(headline_ready=True,primary_forecast=dict(status='ready'),
+        candidates=[dict(candidate_id='13',name='13',projected_share=.6,ci_low=.5,ci_high=.7)])
+    assert '60,0%' in forecast_card(state)
+    assert '60,0%' not in forecast_card(state,stale=True)
+    state['errors']={'projection':'inconsistent inputs'}
+    assert '60,0%' not in forecast_card(state)
 
 def test_real_first_round_final_is_not_a_second_round_prediction():
     payload=json.loads((Path(__file__).parent/'fixtures/first-round-br-live.json').read_text(encoding='utf-8'))
