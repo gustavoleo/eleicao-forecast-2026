@@ -1,0 +1,12 @@
+version: 1
+id: 9ac8f2a4-da63-4c4f-a988-90ecbf101670
+name: TSE public EA11 and EA20 read contract
+slug: tse-public-ea11-and-ea20-read-co
+protocol: http
+port: 4500
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true
+
+interceptRequests: true

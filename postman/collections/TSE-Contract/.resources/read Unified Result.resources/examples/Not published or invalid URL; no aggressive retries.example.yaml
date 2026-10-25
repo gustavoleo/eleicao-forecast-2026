@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/:cycle/:election/dados/:uf/:filename"
+  method: GET
+  headers:
+    If-None-Match: string
+    If-Modified-Since: string
+  pathVariables:
+    - key: cycle
+      value: string
+      disabled: false
+      description: "(Required) "
+    - key: election
+      value: string
+      disabled: false
+      description: "(Required) "
+    - key: uf
+      value: string
+      disabled: false
+      description: "(Required) "
+    - key: filename
+      value: string
+      disabled: false
+      description: (Required) <uf>-c<cargo4>-e<election6>-u.json
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: text/plain
+  body:
+    type: text
+    content: ""
+order: 4000

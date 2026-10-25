@@ -1,0 +1,4 @@
+workflows:
+  syncSpecToCollection:
+    - spec: ../postman/specs/tse.yaml
+      collection: ../postman/collections/TSE-Contract

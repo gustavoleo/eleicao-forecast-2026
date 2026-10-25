@@ -1,0 +1,9 @@
+.venv
+.git
+.env
+secrets
+data
+evidence
+postman
+tests
+__pycache__

@@ -1,0 +1,37 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+TSE-Contract
+
+Root discover Elections
+
+  GET http://127.0.0.1:4900/tse/oficial/comum/config/ele-c.json [200 OK, 20.55 KB, 8 ms]
+  Pass  EA11 is an official election configuration
+
+Root read Unified Result
+
+  GET http://127.0.0.1:4900/tse/oficial/ele2026/fixture/dados/br/result.json [200 OK, 2.75 KB, 3 ms]
+  Pass  EA20 contains candidates and reconciled electorate
+
+------------------------------------------------------------------
+|                         |          executed |           failed |
+--------------------------+-------------------+-------------------
+|              iterations |                 1 |                0 |
+--------------------------+-------------------+-------------------
+|                requests |                 2 |                0 |
+--------------------------+-------------------+-------------------
+|            test-scripts |                 2 |                0 |
+--------------------------+-------------------+-------------------
+|      prerequest-scripts |                 0 |                0 |
+--------------------------+-------------------+-------------------
+|              assertions |                 2 |                0 |
+------------------------------------------------------------------
+| total run duration: 205 ms                                     |
+------------------------------------------------------------------
+| total data received: 22.95 KB (approx)                         |
+------------------------------------------------------------------
+| average response time: 5 ms [min: 3 ms, max: 8 ms, s.d.: 2 ms] |
+------------------------------------------------------------------

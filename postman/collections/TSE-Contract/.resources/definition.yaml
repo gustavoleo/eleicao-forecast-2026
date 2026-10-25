@@ -1,0 +1,7 @@
+$kind: collection
+name: TSE-Contract
+variables:
+  - key: baseUrl
+    value: http://127.0.0.1:4900/tse/oficial
+  - key: contact
+    value: test@example.com

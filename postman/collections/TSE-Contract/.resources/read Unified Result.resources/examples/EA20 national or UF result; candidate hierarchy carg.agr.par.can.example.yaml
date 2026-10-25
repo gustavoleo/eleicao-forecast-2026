@@ -1,0 +1,49 @@
+$kind: http-example
+name: EA20 national or UF result; candidate hierarchy carg.agr.par.cand
+request:
+  url: "{{baseUrl}}/:cycle/:election/dados/:uf/:filename"
+  method: GET
+  headers:
+    If-None-Match: string
+    If-Modified-Since: string
+    Accept: application/json
+  pathVariables:
+    - key: cycle
+      value: string
+      disabled: false
+      description: "(Required) "
+    - key: election
+      value: string
+      disabled: false
+      description: "(Required) "
+    - key: uf
+      value: string
+      disabled: false
+      description: "(Required) "
+    - key: filename
+      value: string
+      disabled: false
+      description: (Required) <uf>-c<cargo4>-e<election6>-u.json
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "ele": "string",
+        "t": "1",
+        "carg": [],
+        "s": {},
+        "e": {},
+        "v": {},
+        "f": "s",
+        "md": "e",
+        "cdabr": "string"
+      }
+order: 1000

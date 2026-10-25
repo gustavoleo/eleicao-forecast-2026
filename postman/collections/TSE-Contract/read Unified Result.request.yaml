@@ -1,0 +1,17 @@
+$kind: http-request
+url: '{{baseUrl}}/ele2026/fixture/dados/br/result.json'
+method: GET
+headers:
+  - key: User-Agent
+    value: 'EleicaoForecast/1.0 (+{{contact}})'
+order: 2000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('EA20 contains candidates and reconciled electorate', () => {
+        pm.response.to.have.status(200);
+        const r=pm.response.json();
+        pm.expect(r.carg[0].agr.length).to.be.above(0);
+        pm.expect(Number(r.e.est)+Number(r.e.esnt)).to.eql(Number(r.e.te));
+      });

@@ -1,0 +1,22 @@
+$kind: http-example
+name: EA11 metadata with pl array, cycle c, election e, codes cd and turn t
+request:
+  url: "{{baseUrl}}/comum/config/ele-c.json"
+  method: GET
+  headers:
+    Accept: application/json
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "pl": []
+      }
+order: 1000

@@ -1,0 +1,57 @@
+openapi: 3.0.3
+info:
+  title: TSE public EA11 and EA20 read contract
+  version: 1.0.0
+  description: Observed official 2026 JSON contract. No credentials. User-Agent identifies operator. Responses and conditional validators captured from live TSE.
+servers:
+  - url: https://resultados.tse.jus.br/oficial
+paths:
+  /comum/config/ele-c.json:
+    get:
+      operationId: discoverElections
+      responses:
+        '200':
+          description: EA11 metadata with pl array, cycle c, election e, codes cd and turn t
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pl]
+                properties:
+                  pl: {type: array, items: {type: object}}
+        '304': {description: Cached content unchanged}
+        '403': {description: Access blocked; suspend origin requests}
+        '429': {description: Rate limited; honor Retry-After}
+        '500': {description: Temporary provider failure}
+  /{cycle}/{election}/dados/{uf}/{filename}:
+    get:
+      operationId: readUnifiedResult
+      parameters:
+        - {name: cycle, in: path, required: true, schema: {type: string}}
+        - {name: election, in: path, required: true, schema: {type: string}}
+        - {name: uf, in: path, required: true, schema: {type: string}}
+        - {name: filename, in: path, required: true, schema: {type: string}, description: '<uf>-c<cargo4>-e<election6>-u.json'}
+        - {name: If-None-Match, in: header, schema: {type: string}}
+        - {name: If-Modified-Since, in: header, schema: {type: string}}
+      responses:
+        '200':
+          description: EA20 national or UF result; candidate hierarchy carg.agr.par.cand
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ele, t, cdabr, dg, hg, carg, s, e, v]
+                properties:
+                  ele: {type: string}
+                  t: {type: string, enum: ['1', '2']}
+                  f: {type: string, enum: [o, s]}
+                  md: {type: string, enum: [e, s, n], description: e means elected; s means runoff defined; n means undefined}
+                  carg: {type: array, items: {type: object}}
+                  s: {type: object}
+                  e: {type: object}
+                  v: {type: object}
+        '304': {description: Cached body unchanged; still counts as a request}
+        '403': {description: Blocked; circuit breaker}
+        '404': {description: Not published or invalid URL; no aggressive retries}
+        '429': {description: Rate limited; exponential backoff}
+        '500': {description: Provider failure; exponential backoff}

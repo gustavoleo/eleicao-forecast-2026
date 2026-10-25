@@ -1,0 +1,18 @@
+services:
+  dashboard:
+    build: .
+    container_name: eleicoes2026-dashboard
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - election-data:/data
+    ports:
+      - '127.0.0.1:8501:8501'
+      - '127.0.0.1:8502:8080'
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+volumes:
+  election-data:
+    name: eleicoes2026-data

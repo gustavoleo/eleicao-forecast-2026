@@ -1,0 +1,15 @@
+$kind: http-request
+url: '{{baseUrl}}/comum/config/ele-c.json'
+method: GET
+headers:
+  - key: User-Agent
+    value: 'EleicaoForecast/1.0 (+{{contact}})'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('EA11 is an official election configuration', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().pl).to.be.an('array').that.is.not.empty;
+      });

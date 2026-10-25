@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: eleicao-forecast
+    runtime: docker
+    plan: free
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: PORT
+        value: '8501'
+      - key: TSE_CONTACT_EMAIL
+        sync: false
+      - key: ELECTION_ROUND
+        value: auto
+      - key: DATA_DIR
+        value: /data
+# Free Render storage is ephemeral and the service may sleep.
+# Use a persistent external backend or the documented Podman volume deployment for continuous collection.

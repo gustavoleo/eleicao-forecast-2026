@@ -1,0 +1,6 @@
+simulation: tse-contract
+routing: path
+mocks:
+  - name: tse
+    routeKey: tse
+    path: postman/mocks/tse

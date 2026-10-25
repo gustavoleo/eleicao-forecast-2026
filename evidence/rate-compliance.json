@@ -1,0 +1,17 @@
+{
+  "start": "2026-10-25T21:12:58.385267+00:00",
+  "end": "2026-10-25T21:18:16.578430+00:00",
+  "seconds": 318.193163,
+  "requests": 191,
+  "peak_sliding_one_second": 3,
+  "mean_requests_per_second": 0.6002643117759259,
+  "http_statuses": {
+    "200": 30,
+    "304": 161
+  },
+  "changed": 30,
+  "bytes_received": 111241,
+  "proves_five_minutes": true,
+  "below_90_requests_per_second": true,
+  "scope": "This collector log only; unrelated programs using the same public IP are outside this measurement."
+}
