@@ -1,0 +1,22 @@
+{
+  "copied_files": {
+    "eleicoes.duckdb": {
+      "bytes": 18100224,
+      "sha256": "e7d0a22f90c7ae232a476479ad070dc78fe52f15575c9fae72986b7bc37c04a3"
+    },
+    "eleicoes.duckdb.wal": {
+      "bytes": 3645866,
+      "sha256": "65faed67055a2f42df3a0e02a6f06e0599af57fe479dd7d96cea423b61bba8e0"
+    }
+  },
+  "verified_table_counts": {
+    "historical_2022": 364,
+    "historical_municipal_2022": 74763,
+    "raw_turbo": 4118,
+    "simulations_meta": 69,
+    "votes_parcial": 26796,
+    "votes_projected": 138
+  },
+  "checkpointed": true,
+  "source_modified": false
+}

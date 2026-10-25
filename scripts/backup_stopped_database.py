@@ -21,7 +21,9 @@ if files[0].with_suffix('.duckdb.wal').exists():
 copied={}
 for source in files:
     destination=args.destination/source.name
-    shutil.copy2(source,destination)
+    # Windows bind mounts may reject Linux timestamp/ownership metadata.
+    # The database bytes and hashes are the backup invariant.
+    shutil.copyfile(source,destination)
     source_hash=hashlib.sha256(source.read_bytes()).hexdigest()
     assert source_hash==hashlib.sha256(destination.read_bytes()).hexdigest()
     copied[source.name]=dict(bytes=destination.stat().st_size,sha256=source_hash)
