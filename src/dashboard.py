@@ -5,13 +5,25 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import json
 import os
+import time
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title='Brasil 2026 · Observatório eleitoral', page_icon='🗳️', layout='wide')
-st_autorefresh(interval=60_000, key='minute_refresh')
+if os.getenv('AUTOREFRESH_MODE', 'native') == 'component':
+    st_autorefresh(interval=60_000, key='minute_refresh')
+else:
+    # The optional iframe component can fail behind proxy challenge scripts.
+    # Native fragment timers use the already-established Streamlit session.
+    st.session_state.setdefault('_last_refresh', time.monotonic())
+    @st.fragment(run_every=60)
+    def native_refresh():
+        if time.monotonic() - st.session_state['_last_refresh'] >= 55:
+            st.session_state['_last_refresh'] = time.monotonic()
+            st.rerun()
+    native_refresh()
 st.markdown('''<style>
 .block-container{max-width:1200px;padding-top:2rem} h1{letter-spacing:-.04em}
 [data-testid="stMetric"]{border:1px solid #71809644;border-radius:12px;padding:18px}

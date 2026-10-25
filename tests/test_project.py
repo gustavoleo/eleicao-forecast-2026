@@ -8,7 +8,7 @@ def case(votes=(60,40), remaining=30, round=2):
     frame = pd.DataFrame([dict(candidate_id=str(i), name=f'Candidate {i}', full_name=f'Candidate {i}',
         votes=v, elected=False, destination='Válido', party=f'P{i}') for i,v in enumerate(votes)])
     stats = dict(round=round, uf='br', cargo='1', official=True, final=False, no_winner=False,
-        mathematical_flag='n', remaining_electors=remaining, valid_votes=sum(votes),
+        mathematical_flag='n', remaining_electors=remaining, valid_votes=sum(votes), bound_complete=True,
         uncounted_electors=0, uninstalled_electors=0, unresolved_votes=0,
         electorate=sum(votes)+remaining, counted_electorate=sum(votes), apurado_pct=50,
         sections_counted=5, sections_total=10)
@@ -57,6 +57,11 @@ def test_md_s_means_runoff_not_elected():
 def test_uninstalled_and_uncounted_electorate_in_bound():
     f,s=case((60,40),10)
     s.update(uncounted_electors=5,uninstalled_electors=6)
+    assert not certainty_gate(f,s)['goal_satisfied']
+
+def test_missing_bound_categories_fail_closed():
+    f,s=case((90,10),1)
+    del s['bound_complete']
     assert not certainty_gate(f,s)['goal_satisfied']
 
 def test_projection_has_ranked_runoff_scenarios():

@@ -23,7 +23,7 @@ def certainty_gate(frame, stats, fresh=True):
                       goal_satisfied=True, reason='TSE indica candidato eleito no arquivo nacional EA20.')
         return result
     # Do not convert md=s (runoff defined) into an elected candidate.
-    if stats.get('remaining_electors') is None or stats.get('unresolved_votes', 0):
+    if not stats.get('bound_complete', False) or stats.get('remaining_electors') is None or stats.get('unresolved_votes', 0):
         result['reason'] = 'Limite conservador indisponível ou votos pendentes de decisão.'
         return result
     eligible = frame[frame.destination.str.casefold().isin(['válido', 'valido', ''])].sort_values('votes', ascending=False)

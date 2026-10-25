@@ -7,7 +7,7 @@
 Fonte: TSE — Dados Abertos (resultados.tse.jus.br)  
 **Projeção estatística, não é resultado oficial.**
 
-This dashboard follows the Brazilian presidential election, automatically discovering the applicable round. It polls the national file every 15 seconds and each of 27 UFs plus overseas (`zz`) every 60 seconds. Model snapshots and browser refreshes occur every 60 seconds. One background collector serves all visitors. Closing a browser does not stop the deployed collector.
+This dashboard follows the Brazilian presidential election, automatically discovering the applicable round. It polls the national file every 15 seconds and each of 27 UFs plus overseas (`zz`) every 60 seconds. Model snapshots and browser refreshes occur every 60 seconds. One background collector serves all visitors. Closing a browser does not stop the deployed collector. The requested `streamlit-autorefresh` package is installed and selectable with `AUTOREFRESH_MODE=component`; it timed out through the public proxy, so the deployed fallback uses Streamlit's native 60-second fragment timer (`AUTOREFRESH_MODE=native`).
 
 The deployed free fallback uses this Windows host's existing Podman WSL2 machine, a persistent named volume, and an isolated Cloudflare Tunnel. **The host and Podman must remain running and connected to the internet.** This is not independently hosted on Streamlit Cloud. Streamlit Cloud was inspected and required sign-in and acceptance of terms. No account or paid service was purchased. Render and Community Cloud deployment instructions are below.
 

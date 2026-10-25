@@ -49,6 +49,10 @@ def test_locale_numeric():
     assert number('57,655409048') == 57.655409048
     assert number('1.234,56') == 1234.56
 
+def test_missing_bound_fields_disable_certainty(real_result):
+    del real_result['e']['esna']
+    assert not parse_result(real_result)[1]['bound_complete']
+
 def test_discovery_changes_round_by_date():
     config = json.loads((FIXTURES / 'ea11-live.json').read_text(encoding='utf-8'))
     first = discover_election_meta(None, Settings(), config, date(2026,10,4))

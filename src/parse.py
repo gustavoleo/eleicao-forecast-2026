@@ -66,12 +66,16 @@ def parse_result(payload, cargo='1', expected_uf=None, expected_election=None):
     remaining = integer(obj.e['esnt']) if 'esnt' in obj.e else None
     if remaining is not None and remaining + counted_electors != total_electors:
         raise ValueError('Electorate remaining-bound reconciliation failed')
+    bound_complete = all(k in obj.e for k in ('esnt', 'esna', 'esni')) and all(k in obj.v for k in ('vansj', 'vsan', 'vscv'))
+    if integer(obj.v['tv']) > counted_electors or valid > integer(obj.v['tv']):
+        raise ValueError('Vote totals exceed the reported counted electorate or total votes')
     stats = dict(election=obj.ele, uf=obj.cdabr.lower(), cargo=str(cargo), round=int(obj.t),
                  generated_at=generated.astimezone(timezone.utc).isoformat(),
                  sections_total=sections_total, sections_counted=sections_counted,
                  apurado_pct=(100 * sections_counted / sections_total if sections_total else 0),
                  electorate=total_electors, counted_electorate=counted_electors,
                  remaining_electors=remaining, valid_votes=valid,
+                 bound_complete=bound_complete,
                  uncounted_electors=integer(obj.e.get('esna', 0)),
                  uninstalled_electors=integer(obj.e.get('esni', 0)),
                  unresolved_votes=sum(integer(obj.v.get(k, 0)) for k in ('vansj', 'vsan', 'vscv')),
