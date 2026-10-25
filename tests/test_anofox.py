@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import pytest
-from src.anofox import AnofoxForecaster,prepare_series,softmax,adjust_for_reporting_geography
+from src.anofox import AnofoxForecaster,prepare_series,softmax,adjust_for_reporting_geography,historical_priors
 from src.project import project
 
 
@@ -74,6 +74,37 @@ def test_long_extrapolation_fails_validation_gate_without_calling_models(monkeyp
     monkeypatch.setattr(engine,'load',lambda:None)
     result=engine.forecast(series(progress=range(1,21)),['a','b'])
     assert result['status']=='horizon_unvalidated'
+
+
+def test_historical_identity_duplicates_and_missing_candidates_remain_excluded():
+    rows=pd.DataFrame([
+        dict(uf=u,candidate_id=c,full_name=n,votes=v,round=2)
+        for u,c,n,v in [('ac','13','Person A',80),('ac','22','Person B',20),
+                        ('sp','13','Person A',50),('sp','13','Person A',50),('sp','22','Person B',50),
+                        ('rr','13','Person A',20),('ro','13','Another person',80),('ro','22','Person B',20)]])
+    priors=historical_priors(rows,['a','b'],{'a':'PERSON A','b':'person b'},2,{})
+    assert set(priors)=={'ac'}
+    assert np.allclose(priors['ac'],[.8,.2])
+    proxy=historical_priors(rows,['a','b'],{},2,{'a':'13','b':'22'})
+    assert set(proxy)=={'ac','ro'}
+
+
+def test_geographic_assembly_requires_coherent_payloads_and_complete_municipal_sets():
+    national=series(progress=[10],share=.8)
+    stamp=national.generated_at.iloc[0]
+    regional=pd.DataFrame([dict(uf=uf,candidate_id=c,votes=v,generated_at=stamp,payload_hash=uf)
+        for uf,vs in [('ac',[80000,20000]),('ac:1',[80000,10000]),('ac:2',[0,10000])]
+        for c,v in zip(['a','b'],vs)])
+    priors={'ac':np.array([.5,.5]),'ac:1':np.array([.9,.1]),'ac:2':np.array([.1,.9])}
+    current={'ac':(None,{'electorate':1000000})}
+    adjusted,_,info=adjust_for_reporting_geography(national,regional,priors,current,{'ac':['1','2']},['a','b'])
+    assert info['municipalities_used']==2
+    assert adjusted.iloc[0].baseline_share==pytest.approx(.82)
+    # Mixed revisions cannot be combined into one synthetic candidate tally.
+    regional.loc[(regional.uf=='ac:1')&(regional.candidate_id=='a'),'payload_hash']='different-revision'
+    adjusted,_,info=adjust_for_reporting_geography(national,regional,priors,current,{'ac':['1','2']},['a','b'])
+    assert info['municipalities_used']==0
+    assert adjusted.iloc[0].baseline_share==pytest.approx(.5)
 
 
 def test_anofox_scenarios_cannot_reallocate_counted_votes():

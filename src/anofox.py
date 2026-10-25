@@ -23,19 +23,27 @@ def softmax(values):
 
 def historical_priors(historical,ids,names,round_number,mapping):
     """Same-person history unless an explicit operator proxy was configured."""
-    priors={}
     if historical.empty:
-        return priors
-    for unit,old in historical[historical['round']==round_number].groupby('uf'):
-        matched=[]
-        for candidate in ids:
-            target=mapping.get(candidate)
-            hit=old[old.candidate_id==target] if target is not None else old[old.full_name.str.casefold()==names[candidate].casefold()]
-            matched.append(float(hit.iloc[0].votes) if len(hit)==1 else np.nan)
-        if np.isfinite(matched).all() and sum(matched)>0:
-            values=np.maximum(matched,.5)
-            priors[unit]=values/values.sum()
-    return priors
+        return {}
+    old=historical[historical['round']==round_number]
+    matches=[]
+    normalized_names=old.full_name.str.casefold()
+    for candidate in ids:
+        target=mapping.get(candidate)
+        hit=old[old.candidate_id==target] if target is not None else old[normalized_names==names[candidate].casefold()]
+        matches.append(hit[['uf','votes']].assign(candidate_id=candidate))
+    matched=pd.concat(matches,ignore_index=True)
+    if matched.empty:
+        return {}
+    # Exactly one row per identity and territory; duplicate mappings stay invalid.
+    groups=matched.groupby(['uf','candidate_id']).agg(votes=('votes','first'),count=('votes','size'))
+    groups.loc[groups['count']!=1,'votes']=np.nan
+    wide=groups.votes.unstack().reindex(columns=ids).dropna()
+    values=wide.to_numpy(dtype=float)
+    valid=np.isfinite(values).all(axis=1)&(values.sum(axis=1)>0)
+    values=np.maximum(values[valid],.5)
+    values/=values.sum(axis=1,keepdims=True)
+    return dict(zip(wide.index[valid],values))
 
 
 def adjust_for_reporting_geography(rows,regional,priors,current_regions,directory,ids):
@@ -58,14 +66,17 @@ def adjust_for_reporting_geography(rows,regional,priors,current_regions,director
     if not regional.empty:
         regional=regional.copy()
         regional['generated_at']=pd.to_datetime(regional.generated_at,utc=True)
+        regional=regional.sort_values(['generated_at','payload_hash'])
         for (_,digest),snap in rows.groupby(['generated_at','payload_hash']):
             stamp=pd.to_datetime(snap.generated_at.iloc[0],utc=True)
             past=regional[regional.generated_at<=stamp]
-            latest=past.sort_values(['generated_at','payload_hash']).drop_duplicates(['uf','candidate_id'],keep='last')
-            units={}
-            for key,g in latest.groupby('uf'):
-                if set(g.candidate_id)==set(ids) and g.payload_hash.nunique()==1:
-                    units[key]=g.set_index('candidate_id').votes.reindex(ids).to_numpy(dtype=float)
+            latest=past.drop_duplicates(['uf','candidate_id'],keep='last')
+            # Vectorize candidate/territory assembly. Thousands of tiny DataFrame
+            # group operations previously blocked national polling each model cycle.
+            groups=latest.groupby('uf').agg(candidates=('candidate_id','size'),digests=('payload_hash','nunique'))
+            wide=latest.pivot(index='uf',columns='candidate_id',values='votes').reindex(columns=ids)
+            wide=wide.loc[(groups.candidates==len(ids))&(groups.digests==1)].dropna()
+            units=dict(zip(wide.index,wide.to_numpy(dtype=float)))
             selected={k:v for k,v in units.items() if ':' not in k}
             used=[]
             for parent in list(selected):

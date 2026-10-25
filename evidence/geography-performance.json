@@ -1,0 +1,15 @@
+{
+  "before": {
+    "priors_seconds": 2.3118418999947608,
+    "adjustment_seconds": 3.7920638999785297
+  },
+  "after": {
+    "priors_seconds": 0.02839629998197779,
+    "adjustment_seconds": 0.08490999997593462
+  },
+  "historical_rows": 75127,
+  "national_rows": 18,
+  "regional_rows": 1730,
+  "equal_outputs": true,
+  "scope": "Same immutable stopped-container database backup; timing is local, not a production throughput claim."
+}
