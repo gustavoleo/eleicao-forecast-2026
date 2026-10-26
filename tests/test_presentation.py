@@ -80,6 +80,19 @@ def test_forecast_card_waits_for_validation_and_reports_actual_storage():
     state['errors']={'projection':'inconsistent inputs'}
     assert '60,0%' not in forecast_card(state)
 
+
+def test_two_candidate_forecast_exposes_three_coherent_scenarios():
+    state={'backend':'DuckDB','projection':{'headline_ready':True,'draws':5000,
+        'primary_forecast':{'status':'ready'},'candidates':[
+            dict(candidate_id='13',name='LULA',projected_share=.52,ci_low=.51,ci_high=.53),
+            dict(candidate_id='22',name='FLAVIO',projected_share=.48,ci_low=.47,ci_high=.49)]}}
+    markup=forecast_card(state)
+    assert all(label in markup for label in ['Limite inferior','Estimativa central','Limite superior','intervalo de 90%','5,000 simulações'])
+    assert '51,00%</span><span>49,00%' in markup
+    assert '52,00%</span><span>48,00%' in markup
+    assert '53,00%</span><span>47,00%' in markup
+    assert 'sem garantia de resultado' in markup
+
 def test_real_first_round_final_is_not_a_second_round_prediction():
     payload=json.loads((Path(__file__).parent/'fixtures/first-round-br-live.json').read_text(encoding='utf-8'))
     f,s=parse_result(payload,expected_election='6257')

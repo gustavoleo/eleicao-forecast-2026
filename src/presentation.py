@@ -32,6 +32,7 @@ CSS='''<style>
 .vote-bar div:last-child{justify-content:end}.vote-bar span{font-size:11px;font-weight:450;opacity:.85;margin:0 5px}
 .count-note{color:#a8b1a1;font-size:12px;margin-top:12px}.count-note b{color:#58d9a0;font-size:15px}
 .forecast-title{font-size:16px;line-height:1.35;margin:0 0 4px;font-weight:700}.forecast-brand{font-size:11px;color:#65daa1;margin-bottom:16px}.forecast-row{margin:12px 0}.forecast-label{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:6px}.forecast-track{height:15px;border-radius:5px;background:#30342d;overflow:hidden}.forecast-track div{height:100%;border-radius:5px}.forecast-note{font-size:11px;color:#b7beb3;line-height:1.45;margin-top:10px}.forecast-pending{font-size:12px;color:#e4c77a;margin:12px 0}
+.scenario-title{font-size:11px;color:#bbc3b5;margin-top:14px}.scenario-grid{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:5px 8px;font-size:10px;margin-top:6px}.scenario-grid b{color:#cbd2c6;font-weight:600}.scenario-grid span{font-variant-numeric:tabular-nums}.scenario-muted{color:#9ca597;font-size:10px;margin-top:6px}
 .source-clock{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #30332d;border-radius:30px;padding:12px 16px;color:#b6bfb0;font-size:12px;margin-top:12px}
 .source-clock .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ecb64d;margin-right:7px}
 .map-legend{display:flex;gap:15px;flex-wrap:wrap;color:#bbc3b5;font-size:11px;margin:8px 0}.map-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
@@ -76,12 +77,24 @@ def forecast_card(state,stale=False):
     status='Cenários estatísticos; não confirmam vencedor.' if ready else ('Fonte desatualizada; previsão suspensa.' if stale else 'Aguardando validação da previsão AnoFox.')
     if model_error: status='Atualização do modelo indisponível; previsão suspensa.'
     reason='' if ready else html.escape(primary.get('reason','Aguardando dados oficiais suficientes.'))
+    scenarios=''
+    if ready and len(candidates)==2:
+        leader,runner=sorted(candidates,key=lambda c:-c['projected_share'])
+        names=[html.escape(c['name']) for c in (leader,runner)]
+        values=[(leader['ci_low'],runner['ci_high']),
+                (leader['projected_share'],runner['projected_share']),
+                (leader['ci_high'],runner['ci_low'])]
+        rows=''.join('<span>'+label+'</span><span>'+f'{a*100:.2f}'.replace('.',',')+'%</span><span>'+f'{b*100:.2f}'.replace('.',',')+'%</span>'
+                     for label,(a,b) in zip(['Limite inferior','Estimativa central','Limite superior'],values))
+        scenarios=(f'<div class="scenario-title">Cenários AnoFox · limites do intervalo de 90% · {int(projection.get("draws",0)):,} simulações</div>'
+                   f'<div class="scenario-grid"><b>Cenário</b><b>{names[0]}</b><b>{names[1]}</b>{rows}</div>'
+                   '<div class="scenario-muted">Extremos da faixa modelada; cenários condicionais, sem garantia de resultado.</div>')
     backend=state.get('backend','DuckDB')
     backend_note='Armazenamento: Hardcharger / ADBC' if 'Hardcharger' in backend else 'Armazenamento: DuckDB · Hardcharger não conectado'
     return ('<div class="race"><div class="forecast-title">Previsão com AnoFox e Hardcharger</div>'
             '<div class="forecast-brand">by Gizmo Data</div>'+''.join(rows)+
             f'<div class="forecast-pending">{status}</div><div class="forecast-note">{reason}</div>'
-            f'<div class="forecast-note">{backend_note}</div></div>')
+            +scenarios+f'<div class="forecast-note">{backend_note}</div></div>')
 
 def state_calls(state,now=None):
     now=now or datetime.now(timezone.utc)
