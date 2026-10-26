@@ -92,6 +92,7 @@ def test_two_candidate_forecast_exposes_three_coherent_scenarios():
     assert '52,00%</span><span>48,00%' in markup
     assert '53,00%</span><span>47,00%' in markup
     assert 'sem garantia de resultado' in markup
+    assert 'Intervalo do modelo:' not in markup
 
 def test_real_first_round_final_is_not_a_second_round_prediction():
     payload=json.loads((Path(__file__).parent/'fixtures/first-round-br-live.json').read_text(encoding='utf-8'))

@@ -68,12 +68,12 @@ def forecast_card(state,stale=False):
     ready=bool(projection.get('headline_ready') and primary.get('status')=='ready' and not stale and not model_error)
     candidates=projection.get('candidates',[]) if ready else state.get('official_candidates',[])
     candidates=sorted(candidates,key=lambda c:(c['candidate_id']!='13',c['candidate_id']))
-    rows=[]
+    forecast_rows=[]
     for c in candidates:
         value=percent(c['projected_share']) if ready else '—'
         fill=f'<div style="width:{100*c["projected_share"]:.4f}%;background:{COLORS.get(c["candidate_id"],"#9b78c6")}"></div>' if ready else ''
-        interval=f'<div class="forecast-note">Intervalo do modelo: {percent(c["ci_low"])}–{percent(c["ci_high"])}</div>' if ready else ''
-        rows.append(f'<div class="forecast-row"><div class="forecast-label"><span>{html.escape(c["name"])}</span><b>{value}</b></div><div class="forecast-track">{fill}</div>{interval}</div>')
+        interval=f'<div class="forecast-note">Intervalo do modelo: {percent(c["ci_low"])}–{percent(c["ci_high"])}</div>' if ready and len(candidates)!=2 else ''
+        forecast_rows.append(f'<div class="forecast-row"><div class="forecast-label"><span>{html.escape(c["name"])}</span><b>{value}</b></div><div class="forecast-track">{fill}</div>{interval}</div>')
     status='Cenários estatísticos; não confirmam vencedor.' if ready else ('Fonte desatualizada; previsão suspensa.' if stale else 'Aguardando validação da previsão AnoFox.')
     if model_error: status='Atualização do modelo indisponível; previsão suspensa.'
     reason='' if ready else html.escape(primary.get('reason','Aguardando dados oficiais suficientes.'))
@@ -84,15 +84,15 @@ def forecast_card(state,stale=False):
         values=[(leader['ci_low'],runner['ci_high']),
                 (leader['projected_share'],runner['projected_share']),
                 (leader['ci_high'],runner['ci_low'])]
-        rows=''.join('<span>'+label+'</span><span>'+f'{a*100:.2f}'.replace('.',',')+'%</span><span>'+f'{b*100:.2f}'.replace('.',',')+'%</span>'
+        scenario_rows=''.join('<span>'+label+'</span><span>'+f'{a*100:.2f}'.replace('.',',')+'%</span><span>'+f'{b*100:.2f}'.replace('.',',')+'%</span>'
                      for label,(a,b) in zip(['Limite inferior','Estimativa central','Limite superior'],values))
         scenarios=(f'<div class="scenario-title">Cenários AnoFox · limites do intervalo de 90% · {int(projection.get("draws",0)):,} simulações</div>'
-                   f'<div class="scenario-grid"><b>Cenário</b><b>{names[0]}</b><b>{names[1]}</b>{rows}</div>'
+                   f'<div class="scenario-grid"><b>Cenário</b><b>{names[0]}</b><b>{names[1]}</b>{scenario_rows}</div>'
                    '<div class="scenario-muted">Extremos da faixa modelada; cenários condicionais, sem garantia de resultado.</div>')
     backend=state.get('backend','DuckDB')
     backend_note='Armazenamento: Hardcharger / ADBC' if 'Hardcharger' in backend else 'Armazenamento: DuckDB · Hardcharger não conectado'
     return ('<div class="race"><div class="forecast-title">Previsão com AnoFox e Hardcharger</div>'
-            '<div class="forecast-brand">by Gizmo Data</div>'+''.join(rows)+
+            '<div class="forecast-brand">by Gizmo Data</div>'+''.join(forecast_rows)+
             f'<div class="forecast-pending">{status}</div><div class="forecast-note">{reason}</div>'
             +scenarios+f'<div class="forecast-note">{backend_note}</div></div>')
 
